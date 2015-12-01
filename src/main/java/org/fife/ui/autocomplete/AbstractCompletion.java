@@ -8,6 +8,9 @@
  */
 package org.fife.ui.autocomplete;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.swing.Icon;
 import javax.swing.text.JTextComponent;
 
@@ -30,6 +33,8 @@ import javax.swing.text.JTextComponent;
  */
 public abstract class AbstractCompletion implements Completion {
 
+	private List<Completion> subCompletions = new ArrayList<Completion>();
+	
 	/**
 	 * The provider that created this completion;
 	 */
@@ -54,8 +59,9 @@ public abstract class AbstractCompletion implements Completion {
 	 *
 	 * @param provider The provider that created this completion.
 	 */
-	protected AbstractCompletion(CompletionProvider provider) {
+	protected AbstractCompletion(CompletionProvider provider, List<Completion> subCompletions) {
 		this.provider = provider;
+		this.subCompletions = subCompletions;
 	}
 
 
@@ -70,6 +76,11 @@ public abstract class AbstractCompletion implements Completion {
 		setIcon(icon);
 	}
 
+	protected AbstractCompletion(CompletionProvider provider) {
+		this(provider, (List<Completion>) null);
+		setIcon(icon);
+	}
+	
 
 	/**
 	 * {@inheritDoc}
@@ -172,6 +183,11 @@ public abstract class AbstractCompletion implements Completion {
 	@Override
 	public String toString() {
 		return getInputText();
+	}
+	
+	@Override
+	public List<Completion> getSubCompletions() {
+		return subCompletions;
 	}
 
 

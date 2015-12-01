@@ -70,7 +70,7 @@ public class ShorthandCompletion extends BasicCompletion {
 	 */
 	public ShorthandCompletion(CompletionProvider provider, String inputText,
 					String replacementText, String shortDesc, String summary) {
-		super(provider, replacementText, shortDesc, summary);
+		super(provider, null, replacementText, shortDesc, summary);
 		this.inputText = inputText;
 	}
 

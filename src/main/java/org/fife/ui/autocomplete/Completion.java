@@ -8,6 +8,8 @@
  */
 package org.fife.ui.autocomplete;
 
+import java.util.List;
+
 import javax.swing.Icon;
 import javax.swing.text.JTextComponent;
 
@@ -38,7 +40,8 @@ import javax.swing.text.JTextComponent;
  */
 public interface Completion extends Comparable<Completion> {
 
-
+	public List<Completion> getSubCompletions();
+	
 	/**
 	 * Compares this completion to another one lexicographically, ignoring
 	 * case.

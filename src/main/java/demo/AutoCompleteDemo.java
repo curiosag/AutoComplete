@@ -40,6 +40,7 @@ public class AutoCompleteDemo extends JFrame {
 		// among multiple text components.
 		AutoCompletion ac = new AutoCompletion(provider);
 		ac.setParameterAssistanceEnabled(true);
+		ac.setAutoCompleteEnabled(true);
 		ac.install(textArea);
 		
 		setContentPane(contentPane);
@@ -83,14 +84,17 @@ public class AutoCompleteDemo extends JFrame {
 		subs.add(new BasicCompletion(provider, "b"));
 		subs.add(new BasicCompletion(provider, "s2"));
 		subs.add(new BasicCompletion(provider, "s3"));
-		provider.addCompletion(new BasicCompletion(provider, "s", subs));
+		provider.addCompletion(new BasicCompletion(provider, "s", "",subs));
 		
 		// Add completions for all Java keywords. A BasicCompletion is just
 		// a straightforward word completion.
-		TemplateCompletion tc = new TemplateCompletion(provider, "x", "x", "for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)");
-		
+		TemplateCompletion tc = new TemplateCompletion(provider, "x1", "x", "for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)");
 		provider.addCompletion(tc);
 		
+		 tc = new TemplateCompletion(provider, "x2", "x", "for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)");
+		provider.addCompletion(tc);
+		 tc = new TemplateCompletion(provider, "x3", "x", "for (int ${i} = 0; ${i} &lt; ${array}.length; ${i}++)");
+		provider.addCompletion(tc);
 		
 		
 		provider.addCompletion(new BasicCompletion(provider, "assert"));

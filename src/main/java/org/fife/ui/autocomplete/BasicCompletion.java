@@ -41,15 +41,6 @@ public class BasicCompletion extends AbstractCompletion {
 		this(provider, null, replacementText, null, null);
 	}
 
-	public BasicCompletion(CompletionProvider provider, String replacementText, String shortDesc){
-		this(provider, replacementText, shortDesc, null);
-	}
-	
-	public BasicCompletion(CompletionProvider provider, String replacementText, List<Completion> subCompletions) {
-		this(provider, subCompletions, replacementText, null, null);
-	}
-
-	
 	/**
 	 * Constructor.
 	 *

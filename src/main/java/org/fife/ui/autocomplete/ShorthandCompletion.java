@@ -9,6 +9,7 @@
  */
 package org.fife.ui.autocomplete;
 
+import java.util.List;
 
 /**
  * A completion where the input text is shorthand for (really, just different
@@ -26,6 +27,10 @@ public class ShorthandCompletion extends BasicCompletion {
 	 */
 	private String inputText;
 
+	public ShorthandCompletion(CompletionProvider provider, String replacementText, String shortDesc, List<Completion> subCompletions) {
+		super(provider, replacementText, shortDesc, subCompletions);
+		this.inputText = shortDesc;
+	}
 
 	/**
 	 * Constructor.
@@ -52,7 +57,7 @@ public class ShorthandCompletion extends BasicCompletion {
 	 */
 	public ShorthandCompletion(CompletionProvider provider, String inputText,
 								String replacementText, String shortDesc) {
-		super(provider, replacementText, shortDesc);
+		super(provider, replacementText, shortDesc, null);
 		this.inputText = inputText;
 	}
 

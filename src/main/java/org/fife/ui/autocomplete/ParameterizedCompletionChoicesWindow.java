@@ -65,6 +65,8 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 	 */
 	private JScrollPane sp;
 
+	private ParameterizedCompletion parameterizedCompletion;
+
 	/**
 	 * Comparator used to sort completions by their relevance before sorting
 	 * them lexicographically.
@@ -93,6 +95,7 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 		if (ac.getParamChoicesRenderer() != null) {
 			list.setCellRenderer(ac.getParamChoicesRenderer());
 		}
+		
 		list.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -153,7 +156,7 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 	 *            for.
 	 */
 	public void initialize(ParameterizedCompletion pc) {
-
+		parameterizedCompletion = pc;
 		CompletionProvider provider = pc.getProvider();
 		ParameterChoicesProvider pcp = provider.getParameterChoicesProvider();
 		if (pcp == null) {
@@ -163,6 +166,7 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 
 		int paramCount = pc.getParamCount();
 		choicesListList = new ArrayList<List<Completion>>(paramCount);
+		
 		JTextComponent tc = ac.getTextComponent();
 
 		for (int i = 0; i < paramCount; i++) {
@@ -170,7 +174,6 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 			List<Completion> choices = pcp.getParameterChoices(tc, param);
 			choicesListList.add(choices);
 		}
-
 	}
 
 	/**
@@ -220,7 +223,8 @@ public class ParameterizedCompletionChoicesWindow extends JWindow {
 	 *            <code>null</code> to represent the empty string.
 	 */
 	public void setParameter(int param, String prefix) {
-
+		initialize(parameterizedCompletion);
+		
 		model.clear();
 		List<Completion> temp = new ArrayList<Completion>();
 

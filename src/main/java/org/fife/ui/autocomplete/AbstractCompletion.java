@@ -38,7 +38,7 @@ public abstract class AbstractCompletion implements Completion {
 	/**
 	 * The provider that created this completion;
 	 */
-	private CompletionProvider provider;
+	protected CompletionProvider provider;
 
 	/**
 	 * The icon to use for this completion.

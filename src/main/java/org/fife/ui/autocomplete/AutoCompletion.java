@@ -46,7 +46,7 @@ import javax.swing.text.*;
  * popup Window.
  */
 public class AutoCompletion {
-
+	
 	/**
 	 * The text component we're providing completion for.
 	 */
@@ -62,7 +62,7 @@ public class AutoCompletion {
 	 */
 	private AutoCompletePopupWindow popupWindow;
 
-	private AutoCompletePopupSubWindow popupSubWindow;
+//	private AutoCompletePopupSubWindow popupSubWindow;
 
 	/**
 	 * The preferred size of the completion choices window. This field exists
@@ -558,6 +558,7 @@ public class AutoCompletion {
 	 *            A completion to insert. This cannot be <code>null</code>.
 	 */
 	protected final void insertCompletion(Completion c) {
+		//TODO gft switch off error underlines here
 		insertCompletion(c, false);
 	}
 
@@ -778,11 +779,11 @@ public class AutoCompletion {
 		if (count > 1 || (count == 1 && (isPopupVisible() || textLen == 0))
 				|| (count == 1 && !getAutoCompleteSingleChoices())) {
 
-			popupWindow = new AutoCompletePopupWindow(parentWindow, this);
-			setPopupWindowStuff(popupWindow);
-			popupSubWindow = new AutoCompletePopupSubWindow(popupWindow, this);
-			setPopupWindowStuff(popupSubWindow);
-			popupWindow.setSubPopup(popupSubWindow);
+			reSetPopupWindowStuff();
+			
+//			popupSubWindow = new AutoCompletePopupSubWindow(popupWindow, this);
+//			setPopupWindowStuff(popupSubWindow);
+//			popupWindow.setSubPopup(popupSubWindow);
 			
 			popupWindow.setCompletions(completions);
 
@@ -821,21 +822,31 @@ public class AutoCompletion {
 
 	}
 
-	public void setPopupWindowStuff(AutoCompletePopupWindow current) {
-
-		popupWindowListener.install(current);
+	public void reSetPopupWindowStuff() {
+		// that's the only contextual change to the original AutoCompletion implementation
+		// because otherwise with round robin completion providers windows don't get replaced
+		// but accumulate
+		if (popupWindow != null){
+			popupWindow.setVisible(false); // needed to undo key bindings
+			popupWindowListener.uninstall(popupWindow);
+			popupWindow.dispose();
+		}
+			
+		popupWindow = new AutoCompletePopupWindow(parentWindow, this);
+		
+		popupWindowListener.install(popupWindow);
 		// Completion is usually done for code, which is always done
 		// LTR, so make completion stuff RTL only if text component is
 		// also RTL.
-		current.applyComponentOrientation(getTextComponentOrientation());
+		popupWindow.applyComponentOrientation(getTextComponentOrientation());
 		if (renderer != null) {
-			current.setListCellRenderer(renderer);
+			popupWindow.setListCellRenderer(renderer);
 		}
 		if (preferredChoicesWindowSize != null) {
-			current.setSize(preferredChoicesWindowSize);
+			popupWindow.setSize(preferredChoicesWindowSize);
 		}
 		if (preferredDescWindowSize != null) {
-			current.setDescriptionWindowSize(preferredDescWindowSize);
+			popupWindow.setDescriptionWindowSize(preferredDescWindowSize);
 		}
 
 	}

@@ -61,7 +61,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private AutoCompletePopupSubWindow subPopup;
+	// private AutoCompletePopupSubWindow subPopup;
 
 	/**
 	 * The parent AutoCompletion instance.
@@ -201,7 +201,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 	}
 
 	public void setSubPopup(AutoCompletePopupSubWindow popupSubWindow) {
-		subPopup = popupSubWindow;
+//		subPopup = popupSubWindow;
 	}
 
 	public void caretUpdate(CaretEvent e) {
@@ -233,7 +233,6 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 		dw.setSize(size);
 		return dw;
 	}
-
 
 	protected void doAutocomplete() {
 		lastLine = ac.refreshPopupWindow();
@@ -923,6 +922,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 
 	}
 
+	
 	class RightAction extends AbstractAction {
 
 		private static final long serialVersionUID = 1L;
@@ -941,9 +941,9 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 					SwingUtilities.convertPointToScreen(p, parent);
 					r.x = p.x;
 					r.y = p.y;
-					subPopup.setLocationRelativeTo(r);
-					subPopup.setCompletions(c.getSubCompletions());
-					subPopup.setVisible(true);
+//					subPopup.setLocationRelativeTo(r);
+//					subPopup.setCompletions(c.getSubCompletions());
+//					subPopup.setVisible(true);
 				}
 				;
 
@@ -952,7 +952,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 		}
 
 	}
-
+	
 	class LeftAction extends AbstractAction {
 
 		private static final long serialVersionUID = 1L;

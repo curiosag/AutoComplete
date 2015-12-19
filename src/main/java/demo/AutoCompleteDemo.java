@@ -70,7 +70,7 @@ public class AutoCompleteDemo extends JFrame {
 			public List<Completion> getParameterChoices(JTextComponent tc, Parameter param) {
 				ArrayList<Completion> p = new ArrayList<Completion>();
 				p.add(new BasicCompletion(provider, "p1"));
-				p.add(new BasicCompletion(provider, "p2"));
+				p.add(new BasicCompletion(provider, "p 2"));
 				p.add(new BasicCompletion(provider, "p3"));
 				return p;
 			}};

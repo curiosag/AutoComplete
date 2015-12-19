@@ -11,10 +11,18 @@ package org.fife.ui.autocomplete;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
+
+import cg.common.check.Check;
+import gc.common.structures.OrderedIntTuple;
+import interfaces.SyntaxElement;
+import interfaces.SyntaxElementSource;
+import uglySmallThings.Const;
+import util.StringUtil;
 
 /**
  * Adds auto-completion to a text component. Provides a popup window with a list
@@ -46,7 +54,7 @@ import javax.swing.text.*;
  * popup Window.
  */
 public class AutoCompletion {
-	
+
 	/**
 	 * The text component we're providing completion for.
 	 */
@@ -62,7 +70,7 @@ public class AutoCompletion {
 	 */
 	private AutoCompletePopupWindow popupWindow;
 
-//	private AutoCompletePopupSubWindow popupSubWindow;
+	// private AutoCompletePopupSubWindow popupSubWindow;
 
 	/**
 	 * The preferred size of the completion choices window. This field exists
@@ -436,7 +444,7 @@ public class AutoCompletion {
 	 * @return The text to replace with.
 	 */
 	protected String getReplacementText(Completion c, Document doc, int start, int len) {
-		//TODO
+		// TODO
 		return c.getReplacementText();
 	}
 
@@ -558,13 +566,15 @@ public class AutoCompletion {
 	 *            A completion to insert. This cannot be <code>null</code>.
 	 */
 	protected final void insertCompletion(Completion c) {
-		//TODO gft switch off error underlines here
 		insertCompletion(c, false);
 	}
 
 	/**
 	 * Inserts a completion. Any time a code completion event occurs, the actual
 	 * text insertion happens through this method.
+	 * 
+	 * gft adaption: quote completions containing blanks. Token directed
+	 * replacement (reparse) for gft schema elements
 	 * 
 	 * @param c
 	 *            A completion to insert. This cannot be <code>null</code>.
@@ -575,24 +585,79 @@ public class AutoCompletion {
 	protected void insertCompletion(Completion c, boolean typedParamListStartChar) {
 
 		JTextComponent textComp = getTextComponent();
-		String alreadyEntered = c.getAlreadyEntered(textComp); //TODO 
+		String alreadyEntered = c.getAlreadyEntered(textComp);
 		hidePopupWindow();
 		Caret caret = textComp.getCaret();
 
 		int dot = caret.getDot();
 		int len = alreadyEntered.length();
-		int start = dot - len;
-		String replacement = getReplacementText(c, textComp.getDocument(), start, len);
 
-		caret.setDot(start);
-		caret.moveDot(dot);
-		textComp.replaceSelection(replacement);
+		OrderedIntTuple bounds = considerParsedBoundaries(textComp.getText(), c, dot - len, dot);
+
+		caret.setDot(bounds.lo());
+		caret.moveDot(bounds.hi());
+		textComp.replaceSelection(maybeQuote(c));
 
 		if (isParameterAssistanceEnabled() && (c instanceof ParameterizedCompletion)) {
 			ParameterizedCompletion pc = (ParameterizedCompletion) c;
 			startParameterizedCompletionAssistance(pc, typedParamListStartChar);
 		}
 
+	}
+
+	private String terriblyUglyWorkaroundBecauseOfLaziness() {
+		return ""; // I don't know, where the fucking trailing blank
+					// disappeared
+	}
+
+	private String maybeQuote(Completion c) {
+		return (c instanceof TemplateCompletion) ? c.getReplacementText()
+				: quoteChoice(c.getReplacementText()) + terriblyUglyWorkaroundBecauseOfLaziness();
+	}
+
+	private OrderedIntTuple considerParsedBoundaries(String text, Completion c, int start, int dot) {
+		int end = dot;
+
+		CompletionProvider p = c.getProvider();
+		if (p instanceof SyntaxElementSource && !(c instanceof TemplateCompletion)) {
+			OrderedIntTuple bounds = getBoundaries(((SyntaxElementSource) p).get(text), dot);
+
+			if (bounds.isDefined) {
+				start = bounds.lo();
+				end = bounds.hi();
+			} 
+		}
+		return OrderedIntTuple.create(start, end);
+	}
+
+	private OrderedIntTuple getBoundaries(List<SyntaxElement> elements, int dot) {
+		for (SyntaxElement e : elements)
+			if (e.from <= dot && e.to >= dot)
+				return OrderedIntTuple.create(e.from, e.to + 1);
+
+		return OrderedIntTuple.create();
+	}
+
+	public static String quoteChoice(String choice) {
+		if (choice == null)
+			return null;
+
+		choice = choice.trim();
+		return choice.indexOf(' ') < 0 ? choice : Const.quoteChar + choice + Const.quoteChar;
+	}
+
+	private int getStart(String text, int i) {
+		if (i <= 0 || i >= text.length())
+			return i;
+		else
+			return StringUtil.getIndexBeforeChar(text, ' ', i, -1);
+	}
+
+	private int getEnd(String text, int i) {
+		if (i >= text.length())
+			return text.length();
+		else
+			return StringUtil.getIndexBeforeChar(text, ' ', i, +1) + 1;
 	}
 
 	/**
@@ -658,8 +723,6 @@ public class AutoCompletion {
 		oldTriggerAction = am.get(PARAM_TRIGGER_KEY);
 		am.put(PARAM_TRIGGER_KEY, createAutoCompleteAction());
 	}
-	
-	
 
 	/**
 	 * Creates and returns the action to call when the user presses the
@@ -753,10 +816,14 @@ public class AutoCompletion {
 	 * 
 	 * @return The current line number of the caret.
 	 */
+	
+	private List<Completion> completionsMemento = null;
+	
 	protected int refreshPopupWindow() {
 
 		// A return value of null => don't suggest completions
 		String text = provider.getAlreadyEnteredText(textComponent);
+
 		if (text == null && !isPopupVisible()) {
 			return getLineOfCaret();
 		}
@@ -773,18 +840,29 @@ public class AutoCompletion {
 			}
 		}
 
+		if (isPopupVisible())
+			completionsMemento = null;
+		
+//		if (! isPopupVisible()) 
+//			completionsMemento = provider.getCompletions(textComponent);
+//		Check.notNull(completionsMemento);
+//		
+//		final List<Completion> completions = limitTo(completionsMemento, text);
+
 		final List<Completion> completions = provider.getCompletions(textComponent);
+		
 		int count = completions == null ? 0 : completions.size();
 
 		if (count > 1 || (count == 1 && (isPopupVisible() || textLen == 0))
 				|| (count == 1 && !getAutoCompleteSingleChoices())) {
 
 			reSetPopupWindowStuff();
-			
-//			popupSubWindow = new AutoCompletePopupSubWindow(popupWindow, this);
-//			setPopupWindowStuff(popupSubWindow);
-//			popupWindow.setSubPopup(popupSubWindow);
-			
+
+			// popupSubWindow = new AutoCompletePopupSubWindow(popupWindow,
+			// this);
+			// setPopupWindowStuff(popupSubWindow);
+			// popupWindow.setSubPopup(popupSubWindow);
+
 			popupWindow.setCompletions(completions);
 
 			if (!popupWindow.isVisible()) {
@@ -822,18 +900,28 @@ public class AutoCompletion {
 
 	}
 
+	private List<Completion> limitTo(List<Completion> completions, String text) {
+		List<Completion> result =  new ArrayList<Completion>();
+		for (Completion c : completions) 
+			if (c.toString().startsWith(text))
+				result.add(c);
+		return result;
+	}
+
 	public void reSetPopupWindowStuff() {
-		// that's the only contextual change to the original AutoCompletion implementation
-		// because otherwise with round robin completion providers windows don't get replaced
+		// that's the only contextual change to the original AutoCompletion
+		// implementation
+		// because otherwise with round robin completion providers windows don't
+		// get replaced
 		// but accumulate
-		if (popupWindow != null){
+		if (popupWindow != null) {
 			popupWindow.setVisible(false); // needed to undo key bindings
 			popupWindowListener.uninstall(popupWindow);
 			popupWindow.dispose();
 		}
-			
+
 		popupWindow = new AutoCompletePopupWindow(parentWindow, this);
-		
+
 		popupWindowListener.install(popupWindow);
 		// Completion is usually done for code, which is always done
 		// LTR, so make completion stuff RTL only if text component is
@@ -1210,11 +1298,10 @@ public class AutoCompletion {
 
 	}
 
-	public void installTriggerKey()
-	{
+	public void installTriggerKey() {
 		installTriggerKey(getDefaultTriggerKey());
 	}
-	
+
 	/**
 	 * Replaces the "trigger key" action with the one that was there before
 	 * auto-completion was installed.

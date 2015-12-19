@@ -49,6 +49,7 @@ import org.fife.ui.rtextarea.ChangeableHighlightPainter;
 import cg.common.check.Check;
 import cg.common.swing.UnderlineHighlightPainter;
 import uglySmallThings.Const;
+import util.StringUtil;
 
 /**
  * Manages UI and state specific to parameterized completions - the parameter
@@ -394,7 +395,7 @@ class ParameterizedCompletionContext {
 		int idxTableParam = -1;
 		int idxColumnParam = -1;
 		List<Highlight> highlights = getParameterHighlights();
-		
+
 		for (int i = 0; i < pc.getParamCount(); i++) {
 			if (pc.getParam(i).getName().equals(Const.paramNameTable))
 				idxTableParam = i;
@@ -409,7 +410,7 @@ class ParameterizedCompletionContext {
 
 		if (result == null && pc.getParamCount() > 0)
 			result = highlights.get(0);
-		
+
 		return result;
 	}
 
@@ -471,22 +472,35 @@ class ParameterizedCompletionContext {
 		if (paramChoicesWindow != null && paramChoicesWindow.isVisible()) {
 			String choice = paramChoicesWindow.getSelectedChoice();
 			if (choice != null) {
-				JTextComponent tc = ac.getTextComponent();
-				Highlight h = getCurrentParameterHighlight();
-				if (h != null) {
-					// "+1" is a workaround for Java Highlight issues.
-					tc.setSelectionStart(h.getStartOffset() + 1);
-					tc.setSelectionEnd(h.getEndOffset());
-					tc.replaceSelection(choice);
-					moveToNextParam();
-				} else {
-					UIManager.getLookAndFeel().provideErrorFeedback(tc);
-				}
+				insertChoice(choice);
 				return true;
 			}
 		}
 		return false;
 	}
+
+	/**
+	 * gft adaption: quote
+	 * @param choice
+	 */
+	private void insertChoice(String choice) {
+		JTextComponent tc = ac.getTextComponent();
+		Highlight h = getCurrentParameterHighlight();
+
+		if (h != null) {
+			String text = tc.getText();
+			// "+1" is a workaround for Java Highlight issues.
+			tc.setSelectionStart(h.getStartOffset() + 1);
+			tc.setSelectionEnd(h.getEndOffset());
+			tc.replaceSelection(AutoCompletion.quoteChoice(choice));
+
+			moveToNextParam();
+		} else {
+			UIManager.getLookAndFeel().provideErrorFeedback(tc);
+		}
+	}
+
+
 
 	/**
 	 * Installs key bindings on the text component that facilitate the user

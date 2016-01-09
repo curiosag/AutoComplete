@@ -317,7 +317,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 		ctrlUpKap = new KeyActionPair("Up", new UpAction());
 		ctrlDownKap = new KeyActionPair("Down", new DownAction());
 		leftKap = new KeyActionPair("Left", new LeftAction());
-		rightKap = new KeyActionPair("Right", new RightAction(this));
+		rightKap = new KeyActionPair("Right", new RightAction());
 		enterKap = new KeyActionPair("Enter", enterAction);
 		tabKap = new KeyActionPair("Tab", enterAction);
 		homeKap = new KeyActionPair("Home", new HomeAction());
@@ -922,46 +922,55 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 
 	}
 
-	
-	class RightAction extends AbstractAction {
 
+	class LeftAction extends AbstractAction {
 		private static final long serialVersionUID = 1L;
-		Component parent;
-
-		public RightAction(Component parent) {
-			this.parent = parent;
-		}
 
 		public void actionPerformed(ActionEvent e) {
 			if (isVisible()) {
-				Completion c = getSelection();
-				if (c != null && c.getSubCompletions() != null) {
-					Rectangle r = list.getCellBounds(list.getSelectedIndex(), list.getSelectedIndex());
-					Point p = new Point(r.x + 10, r.y);
-					SwingUtilities.convertPointToScreen(p, parent);
-					r.x = p.x;
-					r.y = p.y;
-//					subPopup.setLocationRelativeTo(r);
-//					subPopup.setCompletions(c.getSubCompletions());
-//					subPopup.setVisible(true);
+				JTextComponent comp = ac.getTextComponent();
+				Caret c = comp.getCaret();
+				int dot = c.getDot();
+				if (dot > 0) {
+					c.setDot(--dot);
+					// Ensure moving left hasn't moved us up a line, thus
+					// hiding the popup window.
+					if (comp.isVisible()) {
+						if (lastLine!=-1) {
+							doAutocomplete();
+						}
+					}
 				}
-				;
-
 			}
-			;
 		}
 
 	}
-	
-	class LeftAction extends AbstractAction {
 
+
+	class RightAction extends AbstractAction {
 		private static final long serialVersionUID = 1L;
 
 		public void actionPerformed(ActionEvent e) {
+			if (isVisible()) {
+				JTextComponent comp = ac.getTextComponent();
+				Caret c = comp.getCaret();
+				int dot = c.getDot();
+				if (dot < comp.getDocument().getLength()) {
+					c.setDot(++dot);
+					// Ensure moving right hasn't moved us up a line, thus
+					// hiding the popup window.
+					if (comp.isVisible()) {
+						if (lastLine!=-1) {
+							doAutocomplete();
+						}
+					}
+				}
+			}
 		}
 
 	}
 
+	
 	class PageDownAction extends AbstractAction {
 		private static final long serialVersionUID = 1L;
 

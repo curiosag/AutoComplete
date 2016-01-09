@@ -592,12 +592,23 @@ public class AutoCompletion {
 		int dot = caret.getDot();
 		int len = alreadyEntered.length();
 
-		OrderedIntTuple bounds = considerParsedBoundaries(textComp.getText(), c, dot - len, dot);
+		String text = textComp.getText();
+		OrderedIntTuple bounds = considerParsedBoundaries(text, c, dot - len, dot);
 
 		caret.setDot(bounds.lo());
 		caret.moveDot(bounds.hi());
-		textComp.replaceSelection(maybeQuote(c));
 
+		// somehow stuff on the right gets eaten, probably due to strange boundary detection in parser
+		String patch = maybeQuote(c);
+		boolean workaroundDisappearingBlanks = text.length() >= bounds.hi() + 2 && ! text.substring(bounds.hi() + 1, bounds.hi() + 2).startsWith(" ");
+		if (workaroundDisappearingBlanks)
+			patch = patch + " ";
+		
+		textComp.replaceSelection(patch);
+		
+		if (workaroundDisappearingBlanks)	
+			caret.setDot(bounds.lo() + patch.length() - 1);
+		
 		if (isParameterAssistanceEnabled() && (c instanceof ParameterizedCompletion)) {
 			ParameterizedCompletion pc = (ParameterizedCompletion) c;
 			startParameterizedCompletionAssistance(pc, typedParamListStartChar);
@@ -605,14 +616,9 @@ public class AutoCompletion {
 
 	}
 
-	private String terriblyUglyWorkaroundBecauseOfLaziness() {
-		return ""; // I don't know, where the fucking trailing blank
-					// disappeared
-	}
-
 	private String maybeQuote(Completion c) {
 		return (c instanceof TemplateCompletion) ? c.getReplacementText()
-				: quoteChoice(c.getReplacementText()) + terriblyUglyWorkaroundBecauseOfLaziness();
+				: quoteChoice(c.getReplacementText());
 	}
 
 	private OrderedIntTuple considerParsedBoundaries(String text, Completion c, int start, int dot) {

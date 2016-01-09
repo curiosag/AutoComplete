@@ -483,7 +483,7 @@ class ParameterizedCompletionContext {
 	 * gft adaption: quote
 	 * @param choice
 	 */
-	private void insertChoice(String choice) {
+	private void insertChoice(String choice) {		
 		JTextComponent tc = ac.getTextComponent();
 		Highlight h = getCurrentParameterHighlight();
 

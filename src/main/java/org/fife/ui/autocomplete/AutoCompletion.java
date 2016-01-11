@@ -12,6 +12,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.event.*;
@@ -54,6 +55,12 @@ import util.StringUtil;
  * popup Window.
  */
 public class AutoCompletion {
+
+	/**
+	 * allows to suppress reloading of completions when typing
+	 * 
+	 */
+	public boolean isCaretUpdate = false;
 
 	/**
 	 * The text component we're providing completion for.
@@ -573,9 +580,6 @@ public class AutoCompletion {
 	 * Inserts a completion. Any time a code completion event occurs, the actual
 	 * text insertion happens through this method.
 	 * 
-	 * gft adaption: quote completions containing blanks. Token directed
-	 * replacement (reparse) for gft schema elements
-	 * 
 	 * @param c
 	 *            A completion to insert. This cannot be <code>null</code>.
 	 * @param typedParamListStartChar
@@ -591,24 +595,13 @@ public class AutoCompletion {
 
 		int dot = caret.getDot();
 		int len = alreadyEntered.length();
+		int start = dot - len;
+		String replacement = maybeQuote(c);
 
-		String text = textComp.getText();
-		OrderedIntTuple bounds = considerParsedBoundaries(text, c, dot - len, dot);
+		caret.setDot(start);
+		caret.moveDot(dot);
+		textComp.replaceSelection(replacement);
 
-		caret.setDot(bounds.lo());
-		caret.moveDot(bounds.hi());
-
-		// somehow stuff on the right gets eaten, probably due to strange boundary detection in parser
-		String patch = maybeQuote(c);
-		boolean workaroundDisappearingBlanks = text.length() >= bounds.hi() + 2 && ! text.substring(bounds.hi() + 1, bounds.hi() + 2).startsWith(" ");
-		if (workaroundDisappearingBlanks)
-			patch = patch + " ";
-		
-		textComp.replaceSelection(patch);
-		
-		if (workaroundDisappearingBlanks)	
-			caret.setDot(bounds.lo() + patch.length() - 1);
-		
 		if (isParameterAssistanceEnabled() && (c instanceof ParameterizedCompletion)) {
 			ParameterizedCompletion pc = (ParameterizedCompletion) c;
 			startParameterizedCompletionAssistance(pc, typedParamListStartChar);
@@ -617,23 +610,7 @@ public class AutoCompletion {
 	}
 
 	private String maybeQuote(Completion c) {
-		return (c instanceof TemplateCompletion) ? c.getReplacementText()
-				: quoteChoice(c.getReplacementText());
-	}
-
-	private OrderedIntTuple considerParsedBoundaries(String text, Completion c, int start, int dot) {
-		int end = dot;
-
-		CompletionProvider p = c.getProvider();
-		if (p instanceof SyntaxElementSource && !(c instanceof TemplateCompletion)) {
-			OrderedIntTuple bounds = getBoundaries(((SyntaxElementSource) p).get(text), dot);
-
-			if (bounds.isDefined) {
-				start = bounds.lo();
-				end = bounds.hi();
-			} 
-		}
-		return OrderedIntTuple.create(start, end);
+		return (c instanceof TemplateCompletion) ? c.getReplacementText() : quoteChoice(c.getReplacementText());
 	}
 
 	private OrderedIntTuple getBoundaries(List<SyntaxElement> elements, int dot) {
@@ -650,20 +627,6 @@ public class AutoCompletion {
 
 		choice = choice.trim();
 		return choice.indexOf(' ') < 0 ? choice : Const.quoteChar + choice + Const.quoteChar;
-	}
-
-	private int getStart(String text, int i) {
-		if (i <= 0 || i >= text.length())
-			return i;
-		else
-			return StringUtil.getIndexBeforeChar(text, ' ', i, -1);
-	}
-
-	private int getEnd(String text, int i) {
-		if (i >= text.length())
-			return text.length();
-		else
-			return StringUtil.getIndexBeforeChar(text, ' ', i, +1) + 1;
 	}
 
 	/**
@@ -822,9 +785,9 @@ public class AutoCompletion {
 	 * 
 	 * @return The current line number of the caret.
 	 */
-	
+
 	private List<Completion> completionsMemento = null;
-	
+
 	protected int refreshPopupWindow() {
 
 		// A return value of null => don't suggest completions
@@ -846,28 +809,20 @@ public class AutoCompletion {
 			}
 		}
 
-		if (isPopupVisible())
-			completionsMemento = null;
-		
-//		if (! isPopupVisible()) 
-//			completionsMemento = provider.getCompletions(textComponent);
-//		Check.notNull(completionsMemento);
-//		
-//		final List<Completion> completions = limitTo(completionsMemento, text);
+		final List<Completion> completions;
+		final List<Completion> allCompletions;
+		if (completionsMemento == null || !isCaretUpdate) {
+			allCompletions = provider.getCompletions(textComponent);
+			completionsMemento = allCompletions;
+		} else
+			allCompletions = completionsMemento;
+		completions = limitTo(text, allCompletions);
 
-		final List<Completion> completions = provider.getCompletions(textComponent);
-		
 		int count = completions == null ? 0 : completions.size();
 
 		if (count > 1 || (count == 1 && (isPopupVisible() || textLen == 0))
 				|| (count == 1 && !getAutoCompleteSingleChoices())) {
-
 			reSetPopupWindowStuff();
-
-			// popupSubWindow = new AutoCompletePopupSubWindow(popupWindow,
-			// this);
-			// setPopupWindowStuff(popupSubWindow);
-			// popupWindow.setSubPopup(popupSubWindow);
 
 			popupWindow.setCompletions(completions);
 
@@ -906,11 +861,13 @@ public class AutoCompletion {
 
 	}
 
-	private List<Completion> limitTo(List<Completion> completions, String text) {
-		List<Completion> result =  new ArrayList<Completion>();
-		for (Completion c : completions) 
-			if (c.toString().startsWith(text))
+	private List<Completion> limitTo(String start, List<Completion> completions) {
+		List<Completion> result = new LinkedList<Completion>();
+
+		for (Completion c : completions)
+			if (c.getInputText().toLowerCase().startsWith(start.toLowerCase()))
 				result.add(c);
+
 		return result;
 	}
 

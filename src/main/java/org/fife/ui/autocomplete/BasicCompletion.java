@@ -77,6 +77,11 @@ public class BasicCompletion extends AbstractCompletion {
 		this.summary = summary;
 	}
 
+	@Override
+	public String getInputText() {
+		return replacementText;
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */

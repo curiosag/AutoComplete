@@ -75,7 +75,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 
 	
 	JScrollPane listScrollPane;
-	
+
 	/**
 	 * The contents of {@link #list()}.
 	 */
@@ -162,7 +162,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 		list.setCellRenderer(new DelegatingCellRenderer());
 		list.addListSelectionListener(this);
 		list.addMouseListener(this);
-		
+
 
 		JPanel contentPane = new JPanel(new BorderLayout());
 		listScrollPane = new JScrollPane(list, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
@@ -200,19 +200,21 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 
 	}
 
-	public void setSubPopup(AutoCompletePopupSubWindow popupSubWindow) {
-//		subPopup = popupSubWindow;
-	}
-
 	public void caretUpdate(CaretEvent e) {
 		if (isVisible()) { // Should always be true
 			int line = ac.getLineOfCaret();
 			if (line != lastLine) {
 				lastLine = -1;
 				setVisible(false);
-			} else {
-				doAutocomplete();
-			}
+			} else
+				try {
+					ac.isCaretUpdate = true;
+					doAutocomplete();
+				} finally {
+					ac.isCaretUpdate = false;
+				}
+				
+				
 		} else if (AutoCompletion.getDebug()) {
 			Thread.dumpStack();
 		}
@@ -652,7 +654,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 	 * @param completions
 	 *            The completions to display.
 	 */
-	public void setCompletions(List<Completion> completions) {
+      public void setCompletions(List<Completion> completions) {
 		model.setContents(completions);
 		selectFirstItem();
 	}
@@ -936,7 +938,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 					// Ensure moving left hasn't moved us up a line, thus
 					// hiding the popup window.
 					if (comp.isVisible()) {
-						if (lastLine!=-1) {
+						if (lastLine != -1) {
 							doAutocomplete();
 						}
 					}
@@ -960,7 +962,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 					// Ensure moving right hasn't moved us up a line, thus
 					// hiding the popup window.
 					if (comp.isVisible()) {
-						if (lastLine!=-1) {
+						if (lastLine != -1) {
 							doAutocomplete();
 						}
 					}
@@ -970,7 +972,7 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 
 	}
 
-	
+
 	class PageDownAction extends AbstractAction {
 		private static final long serialVersionUID = 1L;
 
@@ -1042,10 +1044,10 @@ class AutoCompletePopupWindow extends JWindow implements CaretListener, ListSele
 
 		public void actionPerformed(ActionEvent e) {
 			if (isVisible()) {
-				
+
 			}
 		}
 
 	}
-	
+
 }

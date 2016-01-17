@@ -40,16 +40,13 @@ import javax.swing.text.Position;
 import javax.swing.text.Highlighter.Highlight;
 import javax.swing.text.Highlighter.HighlightPainter;
 
+import org.cg.common.swing.UnderlineHighlightPainter;
+import org.cg.ftc.shared.uglySmallThings.Const;
 import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
 import org.fife.ui.autocomplete.ParameterizedCompletionInsertionInfo.ReplacementCopy;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.ChangeableHighlightPainter;
-
-import cg.common.check.Check;
-import cg.common.swing.UnderlineHighlightPainter;
-import uglySmallThings.Const;
-import util.StringUtil;
 
 /**
  * Manages UI and state specific to parameterized completions - the parameter

@@ -11,19 +11,15 @@ package org.fife.ui.autocomplete;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.text.*;
 
-import cg.common.check.Check;
-import gc.common.structures.OrderedIntTuple;
-import interfaces.SyntaxElement;
-import interfaces.SyntaxElementSource;
-import uglySmallThings.Const;
-import util.StringUtil;
+import org.cg.common.structures.OrderedIntTuple;
+import org.cg.ftc.shared.interfaces.SyntaxElement;
+import org.cg.ftc.shared.uglySmallThings.Const;
 
 /**
  * Adds auto-completion to a text component. Provides a popup window with a list
@@ -611,14 +607,6 @@ public class AutoCompletion {
 
 	private String maybeQuote(Completion c) {
 		return (c instanceof TemplateCompletion) ? c.getReplacementText() : quoteChoice(c.getReplacementText());
-	}
-
-	private OrderedIntTuple getBoundaries(List<SyntaxElement> elements, int dot) {
-		for (SyntaxElement e : elements)
-			if (e.from <= dot && e.to >= dot)
-				return OrderedIntTuple.create(e.from, e.to + 1);
-
-		return OrderedIntTuple.create();
 	}
 
 	public static String quoteChoice(String choice) {
